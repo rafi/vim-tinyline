@@ -1,8 +1,8 @@
 
 " vim-tinyline - Tiny status line for Vim
 " Maintainer: Rafael Bodill <justrafi@gmail.com>
-" Version:    0.1
-"--------------------------------------------------------------------
+" Version:    0.6
+"-------------------------------------------------
 
 " Configuration {{{1
 " Maximum number of directories in filepath
@@ -11,7 +11,15 @@ if !exists('g:tinyline_max_dirs')
 endif
 " Maximum number of characters in each directory
 if !exists('g:tinyline_max_dir_chars')
-	let g:tinyline_max_dir_chars = 3
+	let g:tinyline_max_dir_chars = 5
+endif
+" Less verbosity on specific filetypes (regexp)
+if !exists('g:tinyline_quiet_filetypes')
+	let g:tinyline_quiet_filetypes = 'qf\|help\|unite\|vimfiler\|gundo\|diff'
+endif
+" Set syntastic statusline format
+if !exists('g:tinyline_disable_syntastic_integration')
+	let g:syntastic_stl_format = '%W{w%w:%fw}%B{ }%E{e%e:%fe}'
 endif
 
 " Color palette {{{1
@@ -38,8 +46,8 @@ let s:visual  = "guifg=".s:base02[0]." guibg=".s:magenta[0]." ctermfg=".s:base02
 let s:replace = "guifg=".s:base02[0]." guibg=".s:red[0].    " ctermfg=".s:base02[1]." ctermbg=".s:red[1]
 
 " Set statusline colors {{{1
-exec "hi! StatusLine   ctermfg=".s:base02[1]." ctermbg=".s:base2[1]
-exec "hi! StatusLineNC ctermfg=".s:base02[1]." ctermbg=".s:base00[1]
+exec "hi StatusLine   ctermfg=".s:base02[1]." ctermbg=".s:base2[1]. " guifg=".s:base02[0]." guibg=".s:base2[0]
+exec "hi StatusLineNC ctermfg=".s:base02[1]." ctermbg=".s:base00[1]." guifg=".s:base02[0]." guibg=".s:base00[0]
 
 " Custom tinyline colors
 " Vim mode color
@@ -48,33 +56,43 @@ exec "hi User1 ".s:normal
 exec "hi User2 guifg=".s:base2[0]. " guibg=".s:base01[0]." ctermfg=".s:base2[1]. " ctermbg=".s:base01[1]
 " Line and column color
 exec "hi User3 guifg=".s:base02[0]." guibg=".s:base1[0]. " ctermfg=".s:base02[1]." ctermbg=".s:base1[1]
-" Readonly color
-exec "hi User4 guifg=".s:orange[0]." guibg=".s:base02[0]." ctermfg=".s:orange[1]." ctermbg=".s:base02[1]
+" Buffer # symbol
+exec "hi User4 guifg=".s:base00[0]. " guibg=".s:base02[0]." ctermfg=".s:base00[1]. " ctermbg=".s:base02[1]
 " Filepath color
 exec "hi User5 guifg=".s:base3[0]. " guibg=".s:base02[0]." ctermfg=".s:base3[1]. " ctermbg=".s:base02[1]
 " Write indicator
 exec "hi User6 guifg=".s:red[0].   " guibg=".s:base02[0]." ctermfg=".s:red[1].   " ctermbg=".s:base02[1]
+" Paste indicator
+exec "hi User7 guifg=".s:green[0]. " guibg=".s:base02[0]." ctermfg=".s:green[1]. " ctermbg=".s:base02[1]
+" Syntastic and whitespace
+exec "hi User8 guifg=".s:yellow[0]. " guibg=".s:base02[0]." ctermfg=".s:yellow[1]. " ctermbg=".s:base02[1]
 
 " Functions {{{1
+"
 " Provides relative path with limited characters in each directory name, and
 " limits number of total directories. Caches the result for current buffer.
-function! SuperName()
+function TlSuperName()
+	" Use buffer's cached filepath 
 	if (exists('b:tinyline_filepath') && len(b:tinyline_filepath) > 0)
 		return b:tinyline_filepath
 	endif
-	let fname = expand('%:t')
-	if (&ft == 'help' || &ft == 'gundo' || &ft == 'diff')
-		let b:tinyline_filepath = ''
-	elseif (&ft == 'vimfiler')
+
+	" VimFiler status string
+	if &ft == 'vimfiler'
 		let b:tinyline_filepath = vimfiler#get_status_string()
-	elseif (fname == '')
-		let b:tinyline_filepath = '[No Name]'
+	" Empty if owned by certain plugins
+	elseif &ft =~? g:tinyline_quiet_filetypes
+		let b:tinyline_filepath = ''
+	" Placeholder for empty buffer
+elseif expand('%:t') == ''
+		let b:tinyline_filepath = 'N/A'
+	" Regular file
 	else
 		" Shorten dir names
 		let short = substitute(expand("%"), "[^/]\\{".g:tinyline_max_dir_chars."}\\zs[^/]\*\\ze/", "", "g")
 		" Decrease dir count
 		let parts = split(short, '/')
-		if (len(parts) > g:tinyline_max_dirs)
+		if len(parts) > g:tinyline_max_dirs
 			let parts = parts[-g:tinyline_max_dirs-1 : ]
 		endif
 		let b:tinyline_filepath = join(parts, '/')
@@ -82,77 +100,132 @@ function! SuperName()
 	return b:tinyline_filepath
 endfunction
 
-" Using Fugitive plugin, return the Git branch name
-function! BranchName()
-	if &ft !~? 'vimfiler\|gundo\|diff\|help' && exists("*fugitive#head")
+" Return git branch name, using Fugitive plugin
+function TlBranchName()
+	if &ft !~? g:tinyline_quiet_filetypes && exists("*fugitive#head")
 		return fugitive#head(8)
 	endif
 	return ''
 endfunction
 
-" Returns a readonly indicator
-function! Readonly()
-	return &ft !~? 'help\|vimfiler\|gundo' && &readonly ? '§' : ''
+" Returns a read-only indicator
+function TlReadonly()
+	return &ft !~? g:tinyline_quiet_filetypes && &readonly ? '§' : ''
 endfunction
 
-" Returns cursor's position percentage of file total
-function! Percent()
+" Deprecated: Returns cursor's position percentage of file total
+function TlPercent()
 	return float2nr(100.0 * line('.') / line('$'))
 endfunction
 
-" Returns line and column position of cursor
-function! Position()
-	if (&ft =~? 'gundo\|diff')
+" Returns line and column position of cursor.
+" Line no. is left-padded by 4-chars, and column no. by 3-chars on the right
+function TlPosition()
+	if &ft =~? g:tinyline_quiet_filetypes
 		return ''
 	endif
 	let line_no = line('.')
 	let col_no = col('.')
-	return repeat(' ', 4-len(line_no)).line_no.':'.col_no.repeat(' ', 3-len(col_no))
+	return repeat(' ', 4-len(line_no)).line_no
+			\ .'/'.col_no.repeat(' ', 3-len(col_no))
 endfunction
 
-" Sets color according to current Vim mode
-function! s:set_mode_color(mode)
-	if (a:mode == 'i')
+" Returns mode string
+function TlMode()
+	return &ft =~? g:tinyline_quiet_filetypes ? '' : '  '.mode().' '
+endfunction
+
+" Returns file format
+function TlFormat()
+	return &ft =~? g:tinyline_quiet_filetypes ? '' : &ff
+endfunction
+
+" Returns syntastic statusline
+function TlSyntastic()
+	" Use buffer's value if cached
+	if !exists('b:tinyline_syntastic')
+		if &ft =~? g:tinyline_quiet_filetypes
+			let b:tinyline_syntastic = ''
+		else
+			let b:tinyline_syntastic = SyntasticStatuslineFlag()
+		endif
+	endif
+	return b:tinyline_syntastic
+endfunction
+
+function! TlWhiteSpace()
+	if !exists('b:tinyline_whitespace')
+		let b:tinyline_whitespace = ''
+		if !&readonly && &modifiable && line('$') < 20000
+			let trailing = search('\s$', 'nw')
+			if trailing != 0
+				let b:tinyline_whitespace .= printf('trail:%s', trailing)
+			endif
+		endif
+	endif
+	return b:tinyline_whitespace
+endfunction!
+
+" Sets custom `User1` color according to {mode} argument
+" Examples of {mode} values: i/r/v
+function s:set_mode_color(mode)
+	if a:mode == 'i'
 		exec 'hi! User1 '.s:insert
-	elseif (a:mode == 'r')
+	elseif a:mode == 'r'
 		exec 'hi! User1 '.s:replace
 	else
 		exec 'hi! User1 '.s:visual
 	endif
 endfunction
 
-" Concat the statusline {{{1
-" ------------------------------------------=-------------------=--------------
-"               Jiberish                    | What da heck?     | Example
-" ------------------------------------------+-------------------+--------------
-set statusline=                            "| Clear status line |
-set statusline+=%1*\ %{mode()}\ %0*        "| Mode              | n
-set statusline+=\ #%4*%{Readonly()}%0*%n   "| Buffer & readonly | #§3
-set statusline+=%4*%{&paste?'=':''}%0*     "| Paste indicator   | =
-set statusline+=\ %5*%{SuperName()}%0*     "| Relative filepath | cor/app.js
-set statusline+=%(\ %6*%M%0*%)             "| Write indicator   | +
-set statusline+=\ %<                       "| Truncate here     |
-set statusline+=%(\‡\ %{BranchName()}%)    "| Git branch name   | ‡ master
-set statusline+=%=                         "| Align to right    |
-set statusline+=%{&ff}                     "| File format       | unix
-set statusline+=%(\ \•\ %{&fenc}%)         "| File encoding     | • utf-8
-set statusline+=%(\ \•\ %{&filetype}%)     "| File type         | • javascript
-set statusline+=\ %2*\ %3.p%%              "| Percentage        | 88%
-set statusline+=\ %3*%{Position()}%0*      "| Line and column   | 69:77
-" ------------------------------------------'-------------------'--------------
+" Concat the active statusline {{{1
+" ------------------------------------------=--------------------=------------
+"               Gibberish                   | What da heck?      | Example
+" ------------------------------------------+--------------------+------------
+set statusline=                            "| Clear status line  |
+set statusline+=%1*%{TlMode()}%*           "| Mode               | i
+set statusline+=\ %7*%{&paste?'=':''}%*    "| Paste symbol       | =
+set statusline+=%4*%{&paste?'':'#'}%*      "| Non-paste symbol   | #
+set statusline+=%6*%{TlReadonly()}         "| Readonly symbol    | §
+set statusline+=%*%n                       "| Buffer number      | 3
+set statusline+=%6*%{&mod?'+':''}%0*       "| Write indicator    | +
+set statusline+=\ %5*%{TlSuperName()}%*    "| Relative supername | cor/app.js
+set statusline+=\ %<                       "| Truncate here      |
+set statusline+=%(‡\ %{TlBranchName()}\ %) "| Git branch name    | ‡ master
+set statusline+=%4*%(%{TlWhiteSpace()}\ %) "| Space and indent   | trail:9
+set statusline+=%(%{TlSyntastic()}\ %)%*   "| Syntastic err/info | e2:23
+set statusline+=%=                         "| Align to right     |
+set statusline+=%(%{TlFormat()}\ •\ \%)    "| File format        | unix •
+set statusline+=%(%{&fenc}\ •\ %)          "| File encoding      | utf-8 •
+set statusline+=%{&ft}                     "| File type          | python
+set statusline+=%*\ %2*\ %3.p%%            "| Percentage         | 88%
+set statusline+=\ %3*%{TlPosition()}%*     "| Line and column    | 69/77
+" ------------------------------------------'--------------------'------------
+" Non-active statusline {{{1
+" ------------------------------------------+--------------------+------------
+let s:stl_nc = "\ %{&paste?'=':'#'}"       "| Paste indicator    | = or #
+let s:stl_nc.= "%{TlReadonly()}%n"         "| Readonly & buffer  | §7
+let s:stl_nc.= "%6*%{&mod?'+':''}%*"       "| Write indicator    | +
+let s:stl_nc.= "\ %{TlSuperName()}"        "| Relative supername | src/main.py
+let s:stl_nc.= "%="                        "| Align to right     |
+let s:stl_nc.= "%{&ft}\ "                  "| File type          | python
+" ------------------------------------------'--------------------'------------
 
-" Inactive buffer's statusline {{{1
-let s:statusline_nc = "\ #%{Readonly()}%n\ %{SuperName()}"
-let s:statusline_active = &g:statusline
+" Store the active statusline for later toggling
+let s:stl = &g:statusline
 
-" Commands {{{1
+" Auto-commands {{{1
 
-" Toggle mode color according to insert status
+" Toggle mode color according to insertmode (does not trigger for visual)
 autocmd InsertEnter * call s:set_mode_color(v:insertmode)
 autocmd InsertLeave * exec 'hi! User1 '.s:normal
+autocmd BufWritePost * unlet! b:tinyline_whitespace | unlet! b:tinyline_syntastic
 
 " Toggle buffer's inactive/active statusline
-autocmd WinEnter * let &l:statusline = s:statusline_active
-autocmd WinLeave * let &l:statusline = s:statusline_nc
+autocmd WinEnter * let &l:statusline = s:stl
+autocmd WinLeave * let &l:statusline = s:stl_nc
+
+" For quickfix windows
+autocmd BufReadPost * let &l:statusline = s:stl
 
 " }}}
