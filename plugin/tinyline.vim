@@ -4,6 +4,13 @@
 " Version:    0.6
 "-------------------------------------------------
 
+if exists('g:loaded_tinyline') && g:loaded_tinyline
+  finish
+endif
+
+let s:save_cpo = &cpo
+set cpo&vim
+
 " Configuration {{{1
 " Maximum number of directories in filepath
 if !exists('g:tinyline_max_dirs')
@@ -212,23 +219,31 @@ let s:stl_nc.= "%="                        "| Align to right     |
 let s:stl_nc.= "%{&ft}\ "                  "| File type          | python
 " ------------------------------------------'--------------------'------------
 
+" Auto-commands {{{1
+
 " Store the active statusline for later toggling
 let s:stl = &g:statusline
 
-" Auto-commands {{{1
+augroup TinyLine
+	autocmd!
+	" Toggle mode color according to insertmode (does not trigger for visual)
+	autocmd InsertEnter * call s:set_mode_color(v:insertmode)
+	autocmd InsertLeave * exec 'hi! User1 '.s:normal
 
-" Toggle mode color according to insertmode (does not trigger for visual)
-autocmd InsertEnter * call s:set_mode_color(v:insertmode)
-autocmd InsertLeave * exec 'hi! User1 '.s:normal
+	" On save, clear whitespace and syntastic cache
+	autocmd BufWritePost * unlet! b:tinyline_whitespace | unlet! b:tinyline_syntastic
 
-" On save, clear whitespace and syntastic cache
-autocmd BufWritePost * unlet! b:tinyline_whitespace | unlet! b:tinyline_syntastic
-
-" Toggle buffer's inactive/active statusline
-autocmd WinEnter * let &l:statusline = s:stl
-autocmd WinLeave * let &l:statusline = s:stl_nc
+	" Toggle buffer's inactive/active statusline
+	autocmd WinEnter * let &l:statusline = s:stl
+	autocmd WinLeave,SessionLoadPost * let &l:statusline = s:stl_nc
+augroup END
 
 " For quickfix windows
-autocmd BufReadPost * let &l:statusline = s:stl
+"autocmd BufReadPost * let &l:statusline = s:stl
 
+" Loading {{{1
+let g:loaded_tinyline = 1
+
+let &cpo = s:save_cpo
+unlet s:save_cpo
 " }}}
