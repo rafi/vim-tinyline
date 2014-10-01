@@ -26,7 +26,7 @@ if !exists('g:tinyline_quiet_filetypes')
 endif
 " Set syntastic statusline format
 if !exists('g:tinyline_disable_syntastic_integration')
-	let g:syntastic_stl_format = '%W{w%w%fw}%B{ }%E{e%e%fe}'
+	let g:syntastic_stl_format = '%W{%w warnings %fw}%B{ }%E{%e errors %fe}'
 endif
 
 " Color palette {{{1
@@ -46,33 +46,25 @@ let s:blue    = [ '#8197bf', 103 ]
 let s:cyan    = [ '#8fbfdc', 110 ]
 let s:green   = [ '#99ad6a', 107 ]
 
-" Colors for different Vim modes {{{1
-let s:normal  = "guifg=".s:base02[0]." guibg=".s:blue[0].   " ctermfg=".s:base02[1]." ctermbg=".s:blue[1]
-let s:insert  = "guifg=".s:base02[0]." guibg=".s:green[0].  " ctermfg=".s:base02[1]." ctermbg=".s:green[1]
-let s:visual  = "guifg=".s:base02[0]." guibg=".s:magenta[0]." ctermfg=".s:base02[1]." ctermbg=".s:magenta[1]
-let s:replace = "guifg=".s:base02[0]." guibg=".s:red[0].    " ctermfg=".s:base02[1]." ctermbg=".s:red[1]
-
 " Set statusline colors {{{1
-exec "hi StatusLine   ctermfg=".s:base02[1]." ctermbg=".s:base2[1]. " guifg=".s:base02[0]." guibg=".s:base2[0]
-exec "hi StatusLineNC ctermfg=".s:base02[1]." ctermbg=".s:base00[1]." guifg=".s:base02[0]." guibg=".s:base00[0]
+highlight StatusLine   ctermfg=236 ctermbg=248 guifg=#30302c guibg=#a8a897
+highlight StatusLineNC ctermfg=236 ctermbg=242 guifg=#30302c guibg=#666656
 
 " Custom tinyline colors
-" Vim mode color
-exec "hi User1 ".s:normal
-" Percent color
-exec "hi User2 guifg=".s:base2[0]. " guibg=".s:base01[0]." ctermfg=".s:base2[1]. " ctermbg=".s:base01[1]
-" Line and column color
-exec "hi User3 guifg=".s:base02[0]." guibg=".s:base1[0]. " ctermfg=".s:base02[1]." ctermbg=".s:base1[1]
-" Buffer # symbol
-exec "hi User4 guifg=".s:base00[0]. " guibg=".s:base02[0]." ctermfg=".s:base00[1]. " ctermbg=".s:base02[1]
 " Filepath color
-exec "hi User5 guifg=".s:base3[0]. " guibg=".s:base02[0]." ctermfg=".s:base3[1]. " ctermbg=".s:base02[1]
+hi User1 guifg=#e8e8d3 guibg=#30302c ctermfg=253 ctermbg=236
+" Percent color
+hi User2 guifg=#a8a897 guibg=#4e4e43 ctermfg=248 ctermbg=239
+" Line and column color
+hi User3 guifg=#30302c guibg=#949484 ctermfg=236." ctermbg=246
+" Buffer # symbol
+hi User4 guifg=#666656 guibg=#30302c ctermfg=242 ctermbg=236
 " Write symbol
-exec "hi User6 guifg=".s:red[0].   " guibg=".s:base02[0]." ctermfg=".s:red[1].   " ctermbg=".s:base02[1]
+hi User6 guifg=#cf6a4c guibg=#30302c ctermfg=167 ctermbg=236
 " Paste symbol
-exec "hi User7 guifg=".s:green[0]. " guibg=".s:base02[0]." ctermfg=".s:green[1]. " ctermbg=".s:base02[1]
+hi User7 guifg=#99ad6a guibg=#30302c ctermfg=107 ctermbg=236
 " Syntastic and whitespace
-exec "hi User8 guifg=".s:yellow[0]. " guibg=".s:base02[0]." ctermfg=".s:yellow[1]. " ctermbg=".s:base02[1]
+hi User8 guifg=#ffb964 guibg=#30302c ctermfg=215 ctermbg=236
 
 " Functions {{{1
 "
@@ -120,26 +112,18 @@ function TlReadonly()
 	return &ft !~? g:tinyline_quiet_filetypes && &readonly ? '' : ''
 endfunction
 
-" Deprecated: Returns cursor's position percentage of file total
-function TlPercent()
-	return float2nr(100.0 * line('.') / line('$'))
-endfunction
-
 " Returns line and column position of cursor.
 " Line no. is left-padded by 4-chars, and column no. by 3-chars on the right
 function TlPosition()
 	if &ft =~? g:tinyline_quiet_filetypes
 		return ''
+	elseif winwidth(0) < 70
+		return line('.')
 	endif
 	let line_no = line('.')
-	let col_no = col('.')
+	let col_no = virtcol('.')
 	return repeat(' ', 4-len(line_no)).line_no
 			\ .'/'.col_no.repeat(' ', 3-len(col_no))
-endfunction
-
-" Returns mode string
-function TlMode()
-	return &ft =~? g:tinyline_quiet_filetypes ? '' : '  '.mode().' '
 endfunction
 
 " Returns file format
@@ -174,30 +158,17 @@ function! TlWhiteSpace()
 	return b:tinyline_whitespace
 endfunction!
 
-" Sets custom `User1` color according to {mode} argument
-" Examples of {mode} values: i/r/v
-function s:set_mode_color(mode)
-	if a:mode == 'i'
-		exec 'hi! User1 '.s:insert
-	elseif a:mode == 'r'
-		exec 'hi! User1 '.s:replace
-	else
-		exec 'hi! User1 '.s:visual
-	endif
-endfunction
-
 " Concat the active statusline {{{1
 " ------------------------------------------=--------------------=------------
 "               Gibberish                   | What da heck?      | Example
 " ------------------------------------------+--------------------+------------
 set statusline=                            "| Clear status line  |
-set statusline+=%1*%{TlMode()}%*           "| Mode               | i
 set statusline+=\ %7*%{&paste?'=':''}%*    "| Paste symbol       | =
 set statusline+=%4*%{&ro?'':'#'}%*         "| Modifiable symbol  | #
 set statusline+=%6*%{TlReadonly()}         "| Readonly symbol    | §
 set statusline+=%*%n                       "| Buffer number      | 3
 set statusline+=%6*%{&mod?'+':''}%0*       "| Write symbol       | +
-set statusline+=\ %5*%{TlSuperName()}%*    "| Relative supername | cor/app.js
+set statusline+=\ %1*%{TlSuperName()}%*    "| Relative supername | cor/app.js
 set statusline+=\ %<                       "| Truncate here      |
 set statusline+=%(\ %{TlBranchName()}\ %) "| Git branch name    | ‡ master
 set statusline+=%4*%(%{TlWhiteSpace()}\ %) "| Space and indent   | trail:9
@@ -206,8 +177,7 @@ set statusline+=%=                         "| Align to right     |
 set statusline+=%{TlFormat()}              "| File format        | unix
 set statusline+=%(\ \ %{&fenc}\ \ %)     "| File encoding      | • utf-8 •
 set statusline+=%{&ft}                     "| File type          | python
-set statusline+=%*\ %2*\ %3.p%%            "| Percentage         | 88%
-set statusline+=\ %3*%{TlPosition()}%*     "| Line and column    | 69/77
+set statusline+=\ \ %2*%{TlPosition()}%*   "| Line and column    | 69/77
 " ------------------------------------------'--------------------'------------
 " Non-active statusline {{{1
 " ------------------------------------------+--------------------+------------
@@ -226,11 +196,7 @@ let s:stl = &g:statusline
 
 augroup TinyLine
 	autocmd!
-	" Toggle mode color according to insertmode (does not trigger for visual)
-	autocmd InsertEnter * call s:set_mode_color(v:insertmode)
-	autocmd InsertLeave * exec 'hi! User1 '.s:normal
-
-	" On save, clear whitespace and syntastic cache
+	" On save, clear whitespace and syntastic statusline we cache
 	autocmd BufWritePost * unlet! b:tinyline_whitespace | unlet! b:tinyline_syntastic
 
 	" Toggle buffer's inactive/active statusline
