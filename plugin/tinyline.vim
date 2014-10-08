@@ -39,8 +39,9 @@ endif
 command! -nargs=0 -bar -bang TinyLine call s:tinyline('<bang>' == '!')
 " }}}
 
-" s:tinyline(disable) "{{{
-function! s:tinyline(disable)
+function! s:tinyline(disable) " {{{
+	" Toggles TinyLine
+	"
 	if a:disable
 		set statusline=
 		augroup TinyLine
@@ -66,9 +67,9 @@ function! s:tinyline(disable)
 endfunction
 
 " }}}
-" s:colorscheme() "{{{
-function s:colorscheme()
+function! s:colorscheme() " {{{
 	" Set statusline colors
+	"
 	highlight StatusLine   ctermfg=236 ctermbg=248 guifg=#30302c guibg=#a8a897
 	highlight StatusLineNC ctermfg=236 ctermbg=242 guifg=#30302c guibg=#666656
 
@@ -90,10 +91,10 @@ function s:colorscheme()
 endfunction
 
 " }}}
-" TlSuperName() "{{{
-" Provides relative path with limited characters in each directory name, and
-" limits number of total directories. Caches the result for current buffer.
-function TlSuperName()
+function! TlSuperName() " {{{
+	" Provides relative path with limited characters in each directory name, and
+	" limits number of total directories. Caches the result for current buffer.
+	"
 	" Use buffer's cached filepath
 	if exists('b:tinyline_filepath') && len(b:tinyline_filepath) > 0
 		return b:tinyline_filepath
@@ -119,13 +120,18 @@ function TlSuperName()
 		endif
 		let b:tinyline_filepath = join(parts, '/')
 	endif
+
+	if exists('b:fugitive_type') && b:fugitive_type == 'blob'
+		let b:tinyline_filepath .= ' (blob)'
+	endif
+
 	return b:tinyline_filepath
 endfunction
 
 " }}}
-" TlBranchName() "{{{
-" Return git branch name, using Fugitive plugin
-function TlBranchName()
+function! TlBranchName() " {{{
+	" Return git branch name, using Fugitive plugin
+	"
 	if &ft !~? g:tinyline_quiet_filetypes && exists("*fugitive#head")
 		return fugitive#head(8)
 	endif
@@ -133,23 +139,31 @@ function TlBranchName()
 endfunction
 
 " }}}
-" TlReadonly() "{{{
-" Returns a read-only symbol
-function TlReadonly()
+function! TlReadonly() " {{{
+	" Returns a read-only symbol
+	"
 	return &ft !~? g:tinyline_quiet_filetypes && &readonly ? '' : ''
 endfunction
 
 " }}}
-" TlFormat() "{{{
-" Returns file format
-function TlFormat()
+function! TlFormat() " {{{
+	" Returns file format
+	"
 	return &ft =~? g:tinyline_quiet_filetypes ? '' : &ff
 endfunction
 
 " }}}
-" TlSyntastic() "{{{
-" Returns syntastic statusline and cache result per buffer
-function TlSyntastic()
+function! TlModified() " {{{
+	" Make sure we ignore &modified when choosewin is active
+	"
+	let choosewin = exists('g:choosewin_active') && g:choosewin_active
+	return &modified && ! choosewin ? '+' : ''
+endfunction
+
+" }}}
+function! TlSyntastic()
+	" Returns syntastic statusline and cache result per buffer
+	"
 	" Use buffer's value if cached
 	if ! exists('b:tinyline_syntastic')
 		if &ft =~? g:tinyline_quiet_filetypes
@@ -162,9 +176,9 @@ function TlSyntastic()
 endfunction
 
 " }}}
-" TlWhitespace() "{{{
-" Detect trailing whitespace and cache result per buffer
 function! TlWhitespace()
+	" Detect trailing whitespace and cache result per buffer
+	"
 	if ! exists('b:tinyline_whitespace')
 		let b:tinyline_whitespace = ''
 		if ! &readonly && &modifiable && line('$') < 20000
@@ -185,25 +199,25 @@ endfunction!
 set statusline=                            "| Clear status line  |
 set statusline+=\ %7*%{&paste?'=':''}%*    "| Paste symbol       | =
 set statusline+=%4*%{&ro?'':'#'}%*         "| Modifiable symbol  | #
-set statusline+=%6*%{TlReadonly()}         "| Readonly symbol    | §
+set statusline+=%6*%{TlReadonly()}         "| Readonly symbol    | 
 set statusline+=%*%n                       "| Buffer number      | 3
-set statusline+=%6*%{&mod?'+':''}%0*       "| Write symbol       | +
+set statusline+=%6*%{TlModified()}%0*      "| Write symbol       | +
 set statusline+=\ %1*%{TlSuperName()}%*    "| Relative supername | cor/app.js
 set statusline+=\ %<                       "| Truncate here      |
-set statusline+=%(\ %{TlBranchName()}\ %) "| Git branch name    | ‡ master
-set statusline+=%4*%(%{TlWhitespace()}\ %) "| Space and indent   | trail:9
-set statusline+=%(%{TlSyntastic()}\ %)%*   "| Syntastic err/info | e2:23
+set statusline+=%(\ %{TlBranchName()}\ %) "| Git branch name    |  master
+set statusline+=%4*%(%{TlWhitespace()}\ %) "| Space and indent   | trail34
+set statusline+=%(%{TlSyntastic()}\ %)%*   "| Syntastic err/info | 2 errors 3
 set statusline+=%=                         "| Align to right     |
 set statusline+=%{TlFormat()}              "| File format        | unix
-set statusline+=%(\ \ %{&fenc}\ \ %)     "| File encoding      | • utf-8 •
+set statusline+=%(\ \ %{&fenc}\ \ %)     "| File encoding      |  utf-8 
 set statusline+=%{&ft}                     "| File type          | python
-set statusline+=\ %2*\ %3l/%2c/%2p%%\ %*   "| Line and column    | 69/77
+set statusline+=\ %2*\ %3l:%2c/%3p%%\ %*   "| Line and column    | 69:77/ 90%
 " ------------------------------------------'--------------------'---------}}}
 " Non-active statusline {{{
 " ------------------------------------------+--------------------+------------
 let s:stl_nc = "\ %{&paste?'=':''}"        "| Paste symbol       | =
 let s:stl_nc.= "%{TlReadonly()}%n"         "| Readonly & buffer  | §7
-let s:stl_nc.= "%6*%{&mod?'+':''}%*"       "| Write symbol       | +
+let s:stl_nc.= "%6*%{TlModified()}%*"      "| Write symbol       | +
 let s:stl_nc.= "\ %{TlSuperName()}"        "| Relative supername | src/main.py
 let s:stl_nc.= "%="                        "| Align to right     |
 let s:stl_nc.= "%{&ft}\ "                  "| File type          | python

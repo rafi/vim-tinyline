@@ -6,31 +6,26 @@ learning Vim's `statusline`.
 
 ## Screenshot
 An active statusline:
-![tinyline active screenshot](./screen_active.png?raw=true)
+![tinyline active screenshot](https://paste.xinu.at/Such9/)
 
 An in-active statusline:
-![tinyline inactive screenshot](./screen_inactive.png?raw=true)
+![tinyline inactive screenshot](https://paste.xinu.at/0SO/)
 
 ## Features
 
 - Tiny. [~150LoC](./plugin/tinyline.vim)
 - Super filepath: Limits number of directories and characters
 - Branch name, using [Fugitive]
+- Detects [ChooseWin] active, and [Fugitive]'s blobs
 - Fast! Caches the filepath per buffer
 - Easy to hack and change
 
 ## Installation
 
-Use your favorite plugin manager:
-
-* [Pathogen][]
-  * `git clone https://github.com/rafi/vim-tinyline.git ~/.vim/bundle/vim-tinyline`
-* [Vundle][]
-  1. Add `Plugin 'rafi/vim-tinyline'` to .vimrc
-  2. Run `:PluginInstall`
-* [NeoBundle][]
-  1. Add `NeoBundle 'rafi/vim-tinyline'` to .vimrc
-  2. Run `:NeoBundleInstall`
+Use your favorite plugin manager, mine is [NeoBundle]:
+```viml
+NeoBundle 'rafi/vim-tinyline', { 'directory': 'tinyline' }
+```
 
 ## Customization
 
@@ -47,8 +42,7 @@ Put any of the following options into your `~/.vimrc` in order to overwrite the 
 
 This plugin was developed by Rafael Bodill under the [MIT License][license]. Pull requests are very welcome.
 
-  [Pathogen]: https://github.com/tpope/vim-pathogen
-  [Vundle]: https://github.com/gmarik/vundle
   [NeoBundle]: https://github.com/Shougo/neobundle.vim
   [Fugitive]: https://github.com/tpope/vim-fugitive
+  [ChooseWin]: https://github.com/t9md/vim-choosewin
   [license]: ./LICENSE
