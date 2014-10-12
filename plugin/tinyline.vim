@@ -75,12 +75,12 @@ function! s:colorscheme() " {{{
 
 	" Custom tinyline colors
 	" Filepath color
-	hi User1 guifg=#e8e8d3 guibg=#30302c ctermfg=253 ctermbg=236
-	" Percent color
+	hi User1 guifg=#D7D7BC guibg=#30302c ctermfg=251 ctermbg=236
+	" Line and column information
 	hi User2 guifg=#a8a897 guibg=#4e4e43 ctermfg=248 ctermbg=239
-	" Line and column color
-	hi User3 guifg=#30302c guibg=#949484 ctermfg=236 ctermbg=246
-	" Buffer # symbol
+	" Line and column corner arrow
+	hi User3 guifg=#4e4e43 guibg=#30302c ctermfg=239 ctermbg=236
+	" Buffer # symbol and whitespace or syntastic errors
 	hi User4 guifg=#666656 guibg=#30302c ctermfg=242 ctermbg=236
 	" Write symbol
 	hi User6 guifg=#cf6a4c guibg=#30302c ctermfg=167 ctermbg=236
@@ -208,15 +208,15 @@ set statusline+=%(\ %{TlBranchName()}\ %) "| Git branch name    |  master
 set statusline+=%4*%(%{TlWhitespace()}\ %) "| Space and indent   | trail34
 set statusline+=%(%{TlSyntastic()}\ %)%*   "| Syntastic err/info | 2 errors 3
 set statusline+=%=                         "| Align to right     |
-set statusline+=%{TlFormat()}              "| File format        | unix
-set statusline+=%(\ \ %{&fenc}\ \ %)     "| File encoding      |  utf-8 
-set statusline+=%{&ft}                     "| File type          | python
-set statusline+=\ %2*\ %3l:%2c/%3p%%\ %*   "| Line and column    | 69:77/ 90%
+set statusline+=%{TlFormat()}\ %4*%*      "| File format        | unix 
+set statusline+=%(\ %{&fenc}\ %)           "| File encoding      | utf-8
+set statusline+=%4*%*%(\ %{&ft}\ %)       "| File type          |  python
+set statusline+=%3*%2*%3l:%2c/%3p%%\ %*   "| Line and column    | 69:77/ 90%
 " ------------------------------------------'--------------------'---------}}}
 " Non-active statusline {{{
 " ------------------------------------------+--------------------+------------
 let s:stl_nc = "\ %{&paste?'=':''}"        "| Paste symbol       | =
-let s:stl_nc.= "%{TlReadonly()}%n"         "| Readonly & buffer  | §7
+let s:stl_nc.= "%{TlReadonly()}%n"         "| Readonly & buffer  | 7
 let s:stl_nc.= "%6*%{TlModified()}%*"      "| Write symbol       | +
 let s:stl_nc.= "\ %{TlSuperName()}"        "| Relative supername | src/main.py
 let s:stl_nc.= "%="                        "| Align to right     |
