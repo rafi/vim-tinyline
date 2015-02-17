@@ -53,8 +53,9 @@ function! s:tinyline(disable) " {{{
 		call s:colorscheme()
 		augroup TinyLine
 			autocmd!
-			" On save, clear whitespace and syntastic statusline we cache
-			autocmd BufWritePost * unlet! b:tinyline_whitespace | unlet! b:tinyline_syntastic
+			" On save, clear cached filename, syntastic, and whitespace info
+			autocmd BufWritePost * unlet! b:tinyline_whitespace
+				\ | unlet! b:tinyline_syntastic | unlet! b:tinyline_filepath
 
 			" Toggle buffer's inactive/active statusline
 			autocmd WinEnter,FileType,ColorScheme * let &l:statusline = s:stl
