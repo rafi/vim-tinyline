@@ -1,12 +1,12 @@
 
 " vim-tinyline - Tiny status line for Vim
 " Maintainer: Rafael Bodill <justrafi at gmail dot com>
-" Version:    0.7
+" Version:    0.8
 "-------------------------------------------------
 
 " Disable reload {{{
 if exists('g:loaded_tinyline') && g:loaded_tinyline
-  finish
+	finish
 endif
 let g:loaded_tinyline = 1
 
@@ -37,11 +37,19 @@ endif
 " }}}
 " Command {{{
 command! -nargs=0 -bar -bang TinyLine call s:tinyline('<bang>' == '!')
+
+" }}}
+" 3rd-Party Plugin Detection {{{
+let s:has_fugitive = exists('*fugitive#head') ||
+	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-fugitive')))
+
+let s:has_vcs = exists('*vcs#info') ||
+	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-vcs')))
 " }}}
 
 function! s:tinyline(disable) " {{{
 	" Toggles TinyLine
-	"
+
 	if a:disable
 		set statusline=
 		augroup TinyLine
@@ -70,9 +78,9 @@ endfunction
 " }}}
 function! s:colorscheme() " {{{
 	" Set statusline colors
-	"
-	highlight StatusLine   ctermfg=236 ctermbg=248 guifg=#30302c guibg=#a8a897
-	highlight StatusLineNC ctermfg=236 ctermbg=242 guifg=#30302c guibg=#666656
+
+	hi StatusLine   ctermfg=236 ctermbg=248 guifg=#30302c guibg=#a8a897
+	hi StatusLineNC ctermfg=236 ctermbg=242 guifg=#30302c guibg=#666656
 
 	" Custom tinyline colors
 	" Filepath color
@@ -95,7 +103,7 @@ endfunction
 function! TlSuperName() " {{{
 	" Provides relative path with limited characters in each directory name, and
 	" limits number of total directories. Caches the result for current buffer.
-	"
+
 	" Use buffer's cached filepath
 	if exists('b:tinyline_filepath') && len(b:tinyline_filepath) > 0
 		return b:tinyline_filepath
@@ -113,7 +121,7 @@ function! TlSuperName() " {{{
 	" Regular file
 	else
 		" Shorten dir names
-		let short = substitute(expand("%"), "[^/]\\{".g:tinyline_max_dir_chars."}\\zs[^/]\*\\ze/", "", "g")
+		let short = substitute(expand('%'), "[^/]\\{".g:tinyline_max_dir_chars."}\\zs[^/]\*\\ze/", '', 'g')
 		" Decrease dir count
 		let parts = split(short, '/')
 		if len(parts) > g:tinyline_max_dirs
@@ -131,10 +139,14 @@ endfunction
 
 " }}}
 function! TlBranchName() " {{{
-	" Return git branch name, using Fugitive plugin
-	"
-	if &ft !~? g:tinyline_quiet_filetypes && exists("*fugitive#head")
-		return fugitive#head(8)
+	" Returns git branch name, using plugins: Shougo/vim-vcs or Fugitive
+
+	if &ft !~? g:tinyline_quiet_filetypes
+		if s:has_fugitive
+			return fugitive#head(8)
+		elseif s:has_vcs
+			return vcs#info('%b')
+		endif
 	endif
 	return ''
 endfunction
@@ -142,29 +154,29 @@ endfunction
 " }}}
 function! TlReadonly() " {{{
 	" Returns a read-only symbol
-	"
+
 	return &ft !~? g:tinyline_quiet_filetypes && &readonly ? '' : ''
 endfunction
 
 " }}}
 function! TlFormat() " {{{
 	" Returns file format
-	"
+
 	return &ft =~? g:tinyline_quiet_filetypes ? '' : &ff
 endfunction
 
 " }}}
 function! TlModified() " {{{
 	" Make sure we ignore &modified when choosewin is active
-	"
+
 	let choosewin = exists('g:choosewin_active') && g:choosewin_active
 	return &modified && ! choosewin ? '+' : ''
 endfunction
 
 " }}}
-function! TlSyntastic()
+function! TlSyntastic() " {{{
 	" Returns syntastic statusline and cache result per buffer
-	"
+
 	" Use buffer's value if cached
 	if ! exists('b:tinyline_syntastic')
 		if &ft =~? g:tinyline_quiet_filetypes
@@ -177,15 +189,15 @@ function! TlSyntastic()
 endfunction
 
 " }}}
-function! TlWhitespace()
+function! TlWhitespace() " {{{
 	" Detect trailing whitespace and cache result per buffer
-	"
+
 	if ! exists('b:tinyline_whitespace')
 		let b:tinyline_whitespace = ''
 		if ! &readonly && &modifiable && line('$') < 20000
 			let trailing = search('\s$', 'nw')
 			if trailing != 0
-				let b:tinyline_whitespace .= printf('trail%s', trailing)
+				let b:tinyline_whitespace .= printf('trail %s', trailing)
 			endif
 		endif
 	endif
