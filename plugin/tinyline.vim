@@ -40,6 +40,9 @@ command! -nargs=0 -bar -bang TinyLine call s:tinyline('<bang>' == '!')
 
 " }}}
 " 3rd-Party Plugin Detection {{{
+let s:has_branchname = exists('*gitbranch#name') ||
+	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-gitbranch')))
+
 let s:has_fugitive = exists('*fugitive#head') ||
 	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-fugitive')))
 
@@ -142,10 +145,12 @@ function! TlBranchName() " {{{
 	" Returns git branch name, using plugins: Shougo/vim-vcs or Fugitive
 
 	if &ft !~? g:tinyline_quiet_filetypes
-		if s:has_fugitive
-			return fugitive#head(8)
+		if s:has_branchname
+			return gitbranch#name()
 		elseif s:has_vcs
 			return vcs#info('%b')
+		elseif s:has_fugitive
+			return fugitive#head(8)
 		endif
 	endif
 	return ''
