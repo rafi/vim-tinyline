@@ -184,7 +184,7 @@ function! TlSyntastic() " {{{
 
 	" Use buffer's value if cached
 	if ! exists('b:tinyline_syntastic')
-		if &ft =~? g:tinyline_quiet_filetypes
+		if &ft =~? g:tinyline_quiet_filetypes || ! exists('*SyntasticStatuslineFlag')
 			let b:tinyline_syntastic = ''
 		else
 			let b:tinyline_syntastic = SyntasticStatuslineFlag()
