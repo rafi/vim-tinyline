@@ -158,10 +158,18 @@ function! TlBranchName() " {{{
 endfunction
 
 " }}}
-function! TlReadonly() " {{{
-	" Returns a read-only symbol
+function! TlMode() " {{{
+	" Returns file's mode: read-only and/or zoomed
 
-	return &ft !~? g:tinyline_quiet_filetypes && &readonly ? '' : ''
+	let s:modes = ''
+	if &ft !~? g:tinyline_quiet_filetypes && &readonly
+		let s:modes .= ''
+	endif
+	if exists('t:zoomed') && t:zoomed
+		let s:modes .= 'Z'
+	endif
+
+	return s:modes
 endfunction
 
 " }}}
@@ -218,7 +226,7 @@ endfunction!
 set statusline=                            "| Clear status line  |
 set statusline+=\ %7*%{&paste?'=':''}%*    "| Paste symbol       | =
 set statusline+=%4*%{&ro?'':'#'}%*         "| Modifiable symbol  | #
-set statusline+=%6*%{TlReadonly()}         "| Readonly symbol    | 
+set statusline+=%6*%{TlMode()}             "| Readonly symbol    | 
 set statusline+=%*%n                       "| Buffer number      | 3
 set statusline+=%6*%{TlModified()}%0*      "| Write symbol       | +
 set statusline+=\ %1*%{TlSuperName()}%*    "| Relative supername | cor/app.js
@@ -235,7 +243,7 @@ set statusline+=%3*%2*%3l:%2c/%3p%%\ %*   "| Line and column    | 69:77/ 90%
 " Non-active statusline {{{
 " ------------------------------------------+--------------------+------------
 let s:stl_nc = "\ %{&paste?'=':''}"        "| Paste symbol       | =
-let s:stl_nc.= "%{TlReadonly()}%n"         "| Readonly & buffer  | 7
+let s:stl_nc.= "%{TlMode()}%n"             "| Readonly & buffer  | 7
 let s:stl_nc.= "%6*%{TlModified()}%*"      "| Write symbol       | +
 let s:stl_nc.= "\ %{TlSuperName()}"        "| Relative supername | src/main.py
 let s:stl_nc.= "%="                        "| Align to right     |
