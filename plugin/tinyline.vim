@@ -208,7 +208,7 @@ function! TlWhitespace() " {{{
 
 	if ! exists('b:tinyline_whitespace')
 		let b:tinyline_whitespace = ''
-		if ! &readonly && &modifiable && line('$') < 20000
+		if ! &readonly && &modifiable && line('$') < 9000
 			let trailing = search('\s$', 'nw')
 			if trailing != 0
 				let b:tinyline_whitespace .= printf('trail %s', trailing)
@@ -238,7 +238,7 @@ set statusline+=%=                         "| Align to right     |
 set statusline+=%{TlFormat()}\ %4*%*      "| File format        | unix 
 set statusline+=%(\ %{&fenc}\ %)           "| File encoding      | utf-8
 set statusline+=%4*%*%(\ %{&ft}\ %)       "| File type          |  python
-set statusline+=%3*%2*%3l:%2c/%3p%%\ %*   "| Line and column    | 69:77/ 90%
+set statusline+=%3*%2*\ %l/%2c%4p%%\ %*   "| Line and column    | 69:77/ 90%
 " ------------------------------------------'--------------------'---------}}}
 " Non-active statusline {{{
 " ------------------------------------------+--------------------+------------
