@@ -65,13 +65,13 @@ function! s:tinyline(disable) " {{{
 		augroup TinyLine
 			autocmd!
 			" On save, clear cached filename, syntastic, and whitespace info
-			autocmd BufWritePost * unlet! b:tinyline_whitespace
-				\ | unlet! b:tinyline_syntastic | unlet! b:tinyline_filepath
+			autocmd BufWritePost *
+				\ unlet! b:tinyline_whitespace b:tinyline_syntastic b:tinyline_filepath
 
 			" Toggle buffer's inactive/active statusline
-			autocmd WinEnter,FileType * let &l:statusline = s:stl
+			autocmd WinEnter,FileType,BufWinEnter * let &l:statusline = s:stl
 			autocmd ColorScheme * call tinyline#define_highlights()
-			autocmd WinLeave,SessionLoadPost * let &l:statusline = s:stl_nc
+			autocmd WinLeave * let &l:statusline = s:stl_nc
 
 			" For quickfix windows
 			"autocmd BufReadPost * let &l:statusline = s:stl
@@ -114,13 +114,13 @@ function! TlSuperName() " {{{
 	endif
 
 	" VimFiler status string
-	if &ft == 'vimfiler'
+	if &ft ==# 'vimfiler'
 		let b:tinyline_filepath = vimfiler#get_status_string()
 	" Empty if owned by certain plugins
 	elseif &ft =~? g:tinyline_quiet_filetypes
 		let b:tinyline_filepath = ''
 	" Placeholder for empty buffer
-	elseif expand('%:t') == ''
+	elseif expand('%:t') ==? ''
 		let b:tinyline_filepath = 'N/A'
 	" Regular file
 	else
@@ -134,7 +134,7 @@ function! TlSuperName() " {{{
 		let b:tinyline_filepath = join(parts, '/')
 	endif
 
-	if exists('b:fugitive_type') && b:fugitive_type == 'blob'
+	if exists('b:fugitive_type') && b:fugitive_type ==# 'blob'
 		let b:tinyline_filepath .= ' (blob)'
 	endif
 
@@ -165,7 +165,7 @@ function! TlMode() " {{{
 	if &ft !~? g:tinyline_quiet_filetypes && &readonly
 		let s:modes .= ''
 	endif
-	if exists('t:zoomed') && t:zoomed
+	if exists('t:zoomed') && bufnr('%') == t:zoomed
 		let s:modes .= 'Z'
 	endif
 
@@ -216,7 +216,7 @@ function! TlWhitespace() " {{{
 		endif
 	endif
 	return b:tinyline_whitespace
-endfunction!
+endfunction
 " }}}
 
 " Concat the active statusline {{{
@@ -242,12 +242,12 @@ set statusline+=%3*%2*\ %l/%2c%4p%%\ %*   "| Line and column    | 69:77/ 90%
 " ------------------------------------------'--------------------'---------}}}
 " Non-active statusline {{{
 " ------------------------------------------+--------------------+------------
-let s:stl_nc = "\ %{&paste?'=':''}"        "| Paste symbol       | =
-let s:stl_nc.= "%{TlMode()}%n"             "| Readonly & buffer  | 7
-let s:stl_nc.= "%6*%{TlModified()}%*"      "| Write symbol       | +
-let s:stl_nc.= "\ %{TlSuperName()}"        "| Relative supername | src/main.py
-let s:stl_nc.= "%="                        "| Align to right     |
-let s:stl_nc.= "%{&ft}\ "                  "| File type          | python
+let s:stl_nc = " %{&paste?'=':''}"         "| Paste symbol       | =
+let s:stl_nc.= '%{TlMode()}%n'             "| Readonly & buffer  | 7
+let s:stl_nc.= '%6*%{TlModified()}%*'      "| Write symbol       | +
+let s:stl_nc.= ' %{TlSuperName()}'         "| Relative supername | src/main.py
+let s:stl_nc.= '%='                        "| Align to right     |
+let s:stl_nc.= '%{&ft} '                   "| File type          | python
 " ------------------------------------------'--------------------'---------}}}
 " Run-time {{{
 " Store the active statusline for later toggling
