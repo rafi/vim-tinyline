@@ -29,10 +29,6 @@ endif
 if ! exists('g:tinyline_quiet_filetypes')
 	let g:tinyline_quiet_filetypes = 'qf\|help\|unite\|vimfiler\|gundo\|diff\|fugitive\|gitv'
 endif
-" Set syntastic statusline format
-if ! exists('g:tinyline_disable_syntastic_integration')
-	let g:syntastic_stl_format = '%W{%w warnings %fw}%B{ }%E{%e errors %fe}'
-endif
 
 " }}}
 " Command {{{
@@ -41,13 +37,13 @@ command! -nargs=0 -bar -bang TinyLine call s:tinyline('<bang>' == '!')
 " }}}
 " 3rd-Party Plugin Detection {{{
 let s:has_branchname = exists('*gitbranch#name') ||
-	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-gitbranch')))
+	\ (exists('*dein#get') && ! empty(dein#get('vim-gitbranch')))
 
 let s:has_fugitive = exists('*fugitive#head') ||
-	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-fugitive')))
+	\ (exists('*dein#get') && ! empty(dein#get('vim-fugitive')))
 
 let s:has_vcs = exists('*vcs#info') ||
-	\ (exists('*neobundle#get') && ! empty(neobundle#get('vim-vcs')))
+	\ (exists('*dein#get') && ! empty(dein#get('vim-vcs')))
 " }}}
 
 function! s:tinyline(disable) " {{{
@@ -64,9 +60,9 @@ function! s:tinyline(disable) " {{{
 		call tinyline#define_highlights()
 		augroup TinyLine
 			autocmd!
-			" On save, clear cached filename, syntastic, and whitespace info
+			" On save, clear cached filename, syntax, and whitespace info
 			autocmd BufWritePost *
-				\ unlet! b:tinyline_whitespace b:tinyline_syntastic b:tinyline_filepath
+				\ unlet! b:tinyline_whitespace b:tinyline_syntax b:tinyline_filepath
 
 			" Toggle buffer's inactive/active statusline
 			autocmd WinEnter,FileType,BufWinEnter * let &l:statusline = s:stl
@@ -93,13 +89,13 @@ function! tinyline#define_highlights() " {{{
 	hi User2 guifg=#a8a897 guibg=#4e4e43 ctermfg=248 ctermbg=239
 	" Line and column corner arrow
 	hi User3 guifg=#4e4e43 guibg=#30302c ctermfg=239 ctermbg=236
-	" Buffer # symbol and whitespace or syntastic errors
+	" Buffer # symbol and whitespace or syntax errors
 	hi User4 guifg=#666656 guibg=#30302c ctermfg=242 ctermbg=236
 	" Write symbol
 	hi User6 guifg=#cf6a4c guibg=#30302c ctermfg=167 ctermbg=236
 	" Paste symbol
 	hi User7 guifg=#99ad6a guibg=#30302c ctermfg=107 ctermbg=236
-	" Syntastic and whitespace
+	" Syntax and whitespace
 	hi User8 guifg=#ffb964 guibg=#30302c ctermfg=215 ctermbg=236
 endfunction
 
@@ -188,18 +184,17 @@ function! TlModified() " {{{
 endfunction
 
 " }}}
-function! TlSyntastic() " {{{
-	" Returns syntastic statusline and cache result per buffer
-
-	" Use buffer's value if cached
-	if ! exists('b:tinyline_syntastic')
-		if &ft =~? g:tinyline_quiet_filetypes || ! exists('*SyntasticStatuslineFlag')
-			let b:tinyline_syntastic = ''
-		else
-			let b:tinyline_syntastic = SyntasticStatuslineFlag()
+function! TlSyntax() " {{{
+	if ! exists('b:tinyline_syntax') || &ft !~? g:tinyline_quiet_filetypes
+		let b:tinyline_syntax = ''
+		if exists('*neomake#Make')
+			let b:tinyline_syntax = neomake#statusline#LoclistStatus()
+		elseif exists('*SyntasticStatuslineFlag')
+			let b:tinyline_syntax = SyntasticStatuslineFlag()
 		endif
 	endif
-	return b:tinyline_syntastic
+
+	return b:tinyline_syntax
 endfunction
 
 " }}}
@@ -233,7 +228,7 @@ set statusline+=\ %1*%{TlSuperName()}%*    "| Relative supername | cor/app.js
 set statusline+=\ %<                       "| Truncate here      |
 set statusline+=%(\ %{TlBranchName()}\ %) "| Git branch name    |  master
 set statusline+=%4*%(%{TlWhitespace()}\ %) "| Space and indent   | trail34
-set statusline+=%(%{TlSyntastic()}\ %)%*   "| Syntastic err/info | 2 errors 3
+set statusline+=%(%{TlSyntax()}\ %)%*      "| syntax error/warn  | E:1W:1
 set statusline+=%=                         "| Align to right     |
 set statusline+=%{TlFormat()}\ %4*%*      "| File format        | unix 
 set statusline+=%(\ %{&fenc}\ %)           "| File encoding      | utf-8

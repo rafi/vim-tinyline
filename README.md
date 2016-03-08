@@ -22,10 +22,7 @@ An in-active statusline:
 
 ## Installation
 
-Use your favorite plugin manager, mine is [NeoBundle]:
-```viml
-NeoBundle 'rafi/vim-tinyline', { 'directory': 'tinyline' }
-```
+Use your favorite plugin manager to add 'rafi/vim-tinyline' to your `.vimrc`.
 
 ## Customization
 
@@ -42,7 +39,6 @@ Put any of the following options into your `~/.vimrc` in order to overwrite the 
 
 This plugin was developed by Rafael Bodill under the [MIT License][license]. Pull requests are very welcome.
 
-  [NeoBundle]: https://github.com/Shougo/neobundle.vim
   [Fugitive]: https://github.com/tpope/vim-fugitive
   [ChooseWin]: https://github.com/t9md/vim-choosewin
   [license]: ./LICENSE
